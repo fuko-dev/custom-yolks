@@ -12,7 +12,10 @@ RUN             dpkg --add-architecture i386 \
                 && apt install -y --no-install-recommends gnupg2 numactl tzdata software-properties-common libntlm0 winbind xvfb xauth python3 libncurses5:i386 libncurses6:i386 libsdl2-2.0-0 libsdl2-2.0-0:i386
 RUN             apt install -y --no-install-recommends wget iproute2 libncurses5-dev:i386 libncurses6 dbus libgdiplus lib32gcc-s1
 RUN             apt install -y alsa-tools libpulse0 pulseaudio libpulse-dev libasound2 libao-common gnutls-bin gnupg locales cabextract curl python3-pip python3-setuptools tini file pipx
-RUN             useradd -d /home/container -m container
+
+# Check if user exists before creating
+RUN             id -u container &>/dev/null || useradd -d /home/container -m container
+
 
 # Install wine and with recommends
 RUN             mkdir -pm755 /etc/apt/keyrings
@@ -22,7 +25,12 @@ RUN             apt update
 RUN             apt install --install-recommends winehq-stable cabextract wine-binfmt -y
 # Add Variables to the environment at the end of ~/.bashrc
 RUN             echo -e 'export WINEPREFIX=~/.wine\nexport WINEDEBUG=fixme-all\nexport WINEARCH=win64' >> ~/.bashrc
-RUN             source ~/.bashrc
+RUN             . ~/.bashrc
+
+USER            container
+ENV             USER=container HOME=/home/container
+WORKDIR         /home/container
+
 RUN             winecfg
 
 # Set up Winetricks
@@ -64,10 +72,6 @@ RUN             steamcmd +@sSteamCmdForcePlatformType windows +login anonymous +
 RUN             rm ~/server/steam_api.dll
 
 
-USER            container
-ENV             USER=container HOME=/home/container
-WORKDIR         /home/container
-
 ENV             HOME=/home/container
 ENV             WINEPREFIX=/home/container/.wine
 ENV             WINEDLLOVERRIDES="mscoree,mshtml="
@@ -80,7 +84,7 @@ ENV             XVFB=1
 
 STOPSIGNAL      SIGINT
 
-COPY            --chown=container:container ./../entrypoint.sh /entrypoint.sh
+COPY            --chown=container:container ./entrypoint.sh /entrypoint.sh
 RUN             chmod +x /entrypoint.sh
 ENTRYPOINT      ["/usr/bin/tini", "-g", "--"]
 CMD             [ "/bin/bash", "/entrypoint.sh" ]
