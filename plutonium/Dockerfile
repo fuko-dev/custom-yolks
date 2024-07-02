@@ -56,16 +56,9 @@ RUN cd ~ \
 # Manually install SteamCMD
 RUN mkdir -p /home/container/steamcmd \
     && cd /home/container/steamcmd \
-    && curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xzv
-
-# Update SteamCMD
-RUN /home/container/steamcmd/steamcmd.sh +login anonymous +quit
-
-# Install the server files into /home/container/server
-RUN /home/container/steamcmd/steamcmd.sh +force_install_dir /home/container/server +login anonymous +app_update 42750 validate +quit
-
-# Delete steam_api.dll from the directory
-RUN rm /home/container/server/steam_api.dll
+    && curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xzv \
+    && chmod +x /home/container/steamcmd/steamcmd.sh \
+    && chown -R container:container /home/container/steamcmd
 
 # Switch to container user
 USER container
